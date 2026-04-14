@@ -126,7 +126,7 @@ export async function getAllSpecies(): Promise<NormalizedSpecies[]> {
 	let url: string | null = `${BASE}/pokemon-species?limit=100`;
 
 	while (url) {
-		const page = await fetchJSON<PokeApiPaginatedResponse>(url);
+		const page: PokeApiPaginatedResponse = await fetchJSON<PokeApiPaginatedResponse>(url);
 		results.push(...page.results);
 		url = page.next;
 	}

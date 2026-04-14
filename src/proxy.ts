@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const PROTECTED = /^\/collection(\/|$)/;
 const AUTH_ONLY = /^\/auth\/(login|register)$/;
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 	const hasSession   = !!request.cookies.get("session")?.value;
 
