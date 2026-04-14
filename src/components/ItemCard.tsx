@@ -92,6 +92,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
                     alt={item.name}
                     width={80}
                     height={80}
+                    loading="lazy"
                     style={{
                         objectFit: "contain",
                         opacity: owned ? 1 : 0.35,
@@ -136,8 +137,8 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
                         padding: "3px 8px",
                         borderRadius: "999px",
                         border: `1px solid ${isFullArt ? "#F59E0B" : "var(--color-border-tertiary)"}`,
-                        background: isFullArt ? "#FEF3C7" : "transparent",
-                        color: isFullArt ? "#92400E" : "var(--color-text-tertiary)",
+                        background: isFullArt ? "rgba(245, 158, 11, 0.15)" : "transparent",
+                        color: isFullArt ? "#F59E0B" : "var(--color-text-tertiary)",
                         cursor: "pointer",
                         transition: "all 0.2s ease",
                     }}

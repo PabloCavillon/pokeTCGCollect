@@ -1,5 +1,4 @@
 import CategoryTabs from "@/components/CategoryTabs";
-import ItemGrid from "@/components/ItemGrid";
 import ToggleWrapper from "@/components/ToggleWrapper";
 import { auth } from "@/lib/auth";
 import { getPokemonGrouped } from "@/lib/queries";

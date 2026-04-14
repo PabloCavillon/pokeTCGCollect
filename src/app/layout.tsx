@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
 	title: "Mi Colección TCG",
@@ -12,15 +13,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="es">
-			<body style={{
-				margin: 0,
-				padding: 0,
-				fontFamily: "system-ui, sans-serif",
-				background: "var(--color-background-primary)",
-				color: "var(--color-text-primary)",
-			}}>
-				{children}
-			</body>
+			<body>{children}</body>
 		</html>
 	);
 }

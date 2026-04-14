@@ -127,8 +127,8 @@ export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGr
                         <div key={base.id}>
                             <div style={{
                                 display: "grid",
-                                gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-                                gap: "10px",
+                                gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+                                gap: "8px",
                             }}>
                                 <ItemCard item={base} onToggle={onToggle} />
 
@@ -149,8 +149,8 @@ export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGr
             ) : (
                 <div style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-                    gap: "10px",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+                    gap: "8px",
                 }}>
                     {(filtered as CollectionItem[]).map((item) => (
                         <ItemCard key={item.id} item={item} onToggle={onToggle} />

@@ -84,13 +84,15 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
                 <div style={{
                     display: "flex",
                     justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "4px 12px",
                     fontSize: "13px",
                     color: "var(--color-text-secondary)",
                 }}>
                     <span style={{ fontWeight: 500, color: "var(--color-text-primary)" }}>
                         Total
                     </span>
-                    <span style={{ display: "flex", gap: "12px" }}>
+                    <span style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                         <span style={{ color: "#F59E0B" }}>{totalFullArt} full art</span>
                         <span style={{ color: "#3B82F6" }}>{nonFullArt} sin full art</span>
                         <span>{missing} faltan</span>
@@ -108,13 +110,15 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
                         <div style={{
                             display: "flex",
                             justifyContent: "space-between",
+                            flexWrap: "wrap",
+                            gap: "4px 12px",
                             fontSize: "13px",
                             color: "var(--color-text-secondary)",
                         }}>
                             <span style={{ fontWeight: 500, color: "var(--color-text-primary)" }}>
                                 {CATEGORY_LABEL[p.category] ?? p.category}
                             </span>
-                            <span style={{ display: "flex", gap: "12px" }}>
+                            <span style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                                 <span style={{ color: "#F59E0B" }}>{p.fullArt} full art</span>
                                 <span style={{ color: "#3B82F6" }}>{nonFA} sin full art</span>
                                 <span>{falta} faltan</span>
