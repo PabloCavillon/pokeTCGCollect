@@ -13,38 +13,49 @@ interface ItemGridProps {
 	showGroups?: boolean;
 }
 
-const FilterPill = ({ label, active, onClick }: {
-	label: string; active: boolean; onClick: () => void;
-}) => (
-	<button
-		onClick={onClick}
-		style={{
-			padding:      "6px 14px",
-			borderRadius: "999px",
-			border:       `1px solid ${active ? "var(--color-text-primary)" : "var(--color-border-tertiary)"}`,
-			background:   active ? "var(--color-text-primary)" : "transparent",
-			color:        active ? "var(--color-background-primary)" : "var(--color-text-secondary)",
-			fontSize:     "13px",
-			cursor:       "pointer",
-			transition:   "all 0.15s ease",
-			whiteSpace:   "nowrap",
-			flexShrink:   0,
-		}}
-	>
-		{label}
-	</button>
-);
+const STATUS_FILTERS: { label: string; value: FilterType }[] = [
+	{ label: "Todos",       value: "all"      },
+	{ label: "Tengo",       value: "owned"    },
+	{ label: "Falta",       value: "missing"  },
+	{ label: "⭐ FA",       value: "fullart"  },
+	{ label: "Sin FA",      value: "nofullart"},
+	{ label: "No busco",    value: "skipped"  },
+];
+
+const GEN_NAMES: Record<number, string> = {
+	1: "Gen I · Kanto",  2: "Gen II · Johto",  3: "Gen III · Hoenn",
+	4: "Gen IV · Sinnoh", 5: "Gen V · Unova",  6: "Gen VI · Kalos",
+	7: "Gen VII · Alola", 8: "Gen VIII · Galar", 9: "Gen IX · Paldea",
+};
 
 function applyFilter(item: CollectionItem, filter: FilterType): boolean {
 	switch (filter) {
-		case "owned":    return item.owned;
-		case "missing":  return !item.owned && !item.skipped;
-		case "fullart":  return item.isFullArt;
+		case "owned":     return item.owned;
+		case "missing":   return !item.owned && !item.skipped;
+		case "fullart":   return item.isFullArt;
 		case "nofullart": return item.owned && !item.isFullArt;
-		case "skipped":  return item.skipped;
-		default:         return true;
+		case "skipped":   return item.skipped;
+		default:          return true;
 	}
 }
+
+const selectStyle: React.CSSProperties = {
+	padding:         "5px 10px",
+	borderRadius:    "8px",
+	border:          "1px solid var(--color-border-tertiary)",
+	background:      "var(--color-background-secondary)",
+	color:           "var(--color-text-secondary)",
+	fontSize:        "12px",
+	cursor:          "pointer",
+	outline:         "none",
+	flexShrink:      0,
+	appearance:      "none" as React.CSSProperties["appearance"],
+	WebkitAppearance:"none" as React.CSSProperties["WebkitAppearance"],
+	backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a1a1aa' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+	backgroundRepeat: "no-repeat",
+	backgroundPosition: "right 8px center",
+	paddingRight:    "26px",
+};
 
 const GRID: React.CSSProperties = {
 	display:             "grid",
@@ -52,40 +63,17 @@ const GRID: React.CSSProperties = {
 	gap:                 "8px",
 };
 
-const STATUS_FILTERS: { label: string; value: FilterType }[] = [
-	{ label: "Todos",        value: "all"      },
-	{ label: "Tengo",        value: "owned"    },
-	{ label: "Falta",        value: "missing"  },
-	{ label: "⭐ Full Art",  value: "fullart"  },
-	{ label: "Sin Full Art", value: "nofullart"},
-	{ label: "No busco",     value: "skipped"  },
-];
-
-const GEN_NAMES: Record<number, string> = {
-	1: "Gen I · Kanto",
-	2: "Gen II · Johto",
-	3: "Gen III · Hoenn",
-	4: "Gen IV · Sinnoh",
-	5: "Gen V · Unova",
-	6: "Gen VI · Kalos",
-	7: "Gen VII · Alola",
-	8: "Gen VIII · Galar",
-	9: "Gen IX · Paldea",
-};
-
 export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }: ItemGridProps) {
-	const [filter,    setFilter]    = useState<FilterType>("all");
-	const [search,    setSearch]    = useState("");
-	const [region,    setRegion]    = useState("all");
-	const [gen,       setGen]       = useState<number | "all">("all");
+	const [filter, setFilter] = useState<FilterType>("all");
+	const [search, setSearch] = useState("");
+	const [region, setRegion] = useState("all");
+	const [gen,    setGen]    = useState<number | "all">("all");
 
-	// Flatten all items (including variants) for stats and filter extraction
 	const allFlat: CollectionItem[] = useMemo(() => showGroups
 		? (items as CollectionItemWithVariants[]).flatMap(b => [b, ...b.variants])
 		: (items as CollectionItem[]),
 	[items, showGroups]);
 
-	// Unique regions and generations present in the data
 	const regions = useMemo(() => {
 		const set = new Set<string>();
 		allFlat.forEach(i => { if (i.region) set.add(i.region); });
@@ -101,16 +89,14 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 	const flat = useMemo((): CollectionItem[] => {
 		const query = search.toLowerCase().trim();
 
-		let pool: CollectionItem[];
-
 		if (showGroups) {
 			const grouped = items as CollectionItemWithVariants[];
 			const result: CollectionItem[] = [];
 			for (const base of grouped) {
-				const baseMatch   = query === "" || base.name.toLowerCase().includes(query);
-				const baseFilter  = applyFilter(base, filter);
-				const baseRegion  = region === "all" || base.region === region || (region !== "all" && base.variantOfId === null && base.region === null);
-				const baseGen     = gen === "all" || base.generation === gen;
+				const baseMatch  = query === "" || base.name.toLowerCase().includes(query);
+				const baseFilter = applyFilter(base, filter);
+				const baseGen    = gen === "all" || base.generation === gen;
+				const baseReg    = region === "all" || base.region === null || base.region === region;
 
 				const matchingVariants = base.variants.filter(v =>
 					applyFilter(v, filter) &&
@@ -119,23 +105,19 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 					(gen === "all" || v.generation === gen)
 				);
 
-				const showBase = baseMatch && baseFilter && baseGen &&
-					(region === "all" || base.region === null || base.region === region);
-
-				if (showBase || matchingVariants.length > 0) result.push(base);
+				if ((baseMatch && baseFilter && baseGen && baseReg) || matchingVariants.length > 0)
+					result.push(base);
 				result.push(...matchingVariants);
 			}
-			pool = result;
-		} else {
-			pool = (items as CollectionItem[]).filter(item =>
-				applyFilter(item, filter) &&
-				(query === "" || item.name.toLowerCase().includes(query)) &&
-				(region === "all" || item.region === region) &&
-				(gen === "all" || item.generation === gen)
-			);
+			return result;
 		}
 
-		return pool;
+		return (items as CollectionItem[]).filter(item =>
+			applyFilter(item, filter) &&
+			(query === "" || item.name.toLowerCase().includes(query)) &&
+			(region === "all" || item.region === region) &&
+			(gen === "all" || item.generation === gen)
+		);
 	}, [items, filter, search, region, gen, showGroups]);
 
 	const total   = allFlat.length;
@@ -143,25 +125,28 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 	const missing = allFlat.filter(i => !i.owned && !i.skipped).length;
 	const skipped = allFlat.filter(i => i.skipped).length;
 
+	const hasRegions = regions.length > 0;
+	const hasGens    = generations.length > 1;
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-			{/* ── Sticky header ─────────────────────────────────────── */}
+			{/* ── Sticky header ───────────────────────────────────── */}
 			<div style={{
-				position:        "sticky",
-				top:             0,
-				zIndex:          20,
-				background:      "var(--color-background-primary)",
-				paddingTop:      "8px",
-				paddingBottom:   "8px",
-				display:         "flex",
-				flexDirection:   "column",
-				gap:             "8px",
-				borderBottom:    "1px solid var(--color-border-tertiary)",
-				marginLeft:      "-16px",
-				marginRight:     "-16px",
-				paddingLeft:     "16px",
-				paddingRight:    "16px",
+				position:      "sticky",
+				top:           0,
+				zIndex:        20,
+				background:    "var(--color-background-primary)",
+				marginLeft:    "-16px",
+				marginRight:   "-16px",
+				paddingLeft:   "16px",
+				paddingRight:  "16px",
+				paddingTop:    "10px",
+				paddingBottom: "10px",
+				display:       "flex",
+				flexDirection: "column",
+				gap:           "8px",
+				borderBottom:  "1px solid var(--color-border-tertiary)",
 			}}>
 				{/* Search */}
 				<input
@@ -170,7 +155,7 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 					value={search}
 					onChange={e => setSearch(e.target.value)}
 					style={{
-						padding:      "10px 14px",
+						padding:      "9px 14px",
 						borderRadius: "8px",
 						border:       "1px solid var(--color-border-tertiary)",
 						background:   "var(--color-background-secondary)",
@@ -181,37 +166,70 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 					}}
 				/>
 
-				{/* Status filters */}
-				<div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
-					{STATUS_FILTERS.map(f => (
-						<FilterPill key={f.value} label={f.label} active={filter === f.value} onClick={() => setFilter(f.value)} />
-					))}
+				{/* Status pills + dropdowns in one row */}
+				<div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+					{/* Pills — scrollable */}
+					<div style={{ display: "flex", gap: "5px", overflowX: "auto", flex: 1, paddingBottom: "2px" }}>
+						{STATUS_FILTERS.map(f => {
+							const active = filter === f.value;
+							return (
+								<button
+									key={f.value}
+									onClick={() => setFilter(f.value)}
+									style={{
+										padding:      "5px 12px",
+										borderRadius: "999px",
+										border:       `1px solid ${active ? "var(--color-text-primary)" : "var(--color-border-tertiary)"}`,
+										background:   active ? "var(--color-text-primary)" : "transparent",
+										color:        active ? "var(--color-background-primary)" : "var(--color-text-secondary)",
+										fontSize:     "12px",
+										cursor:       "pointer",
+										whiteSpace:   "nowrap",
+										flexShrink:   0,
+										transition:   "all 0.15s ease",
+									}}
+								>
+									{f.label}
+								</button>
+							);
+						})}
+					</div>
+
+					{/* Dropdowns — fixed to the right */}
+					{(hasRegions || hasGens) && (
+						<div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+							{hasRegions && (
+								<select
+									value={region}
+									onChange={e => setRegion(e.target.value)}
+									style={selectStyle}
+								>
+									<option value="all">Región</option>
+									{regions.map(r => (
+										<option key={r} value={r}>{r}</option>
+									))}
+								</select>
+							)}
+							{hasGens && (
+								<select
+									value={gen}
+									onChange={e => setGen(e.target.value === "all" ? "all" : Number(e.target.value))}
+									style={selectStyle}
+								>
+									<option value="all">Gen</option>
+									{generations.map(g => (
+										<option key={g} value={g}>{GEN_NAMES[g] ?? `Gen ${g}`}</option>
+									))}
+								</select>
+							)}
+						</div>
+					)}
 				</div>
-
-				{/* Region filter — only if data has regions */}
-				{regions.length > 0 && (
-					<div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
-						<FilterPill label="Todas las regiones" active={region === "all"} onClick={() => setRegion("all")} />
-						{regions.map(r => (
-							<FilterPill key={r} label={r} active={region === r} onClick={() => setRegion(r)} />
-						))}
-					</div>
-				)}
-
-				{/* Generation filter — only if data has generations */}
-				{generations.length > 1 && (
-					<div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px" }}>
-						<FilterPill label="Todas las gens" active={gen === "all"} onClick={() => setGen("all")} />
-						{generations.map(g => (
-							<FilterPill key={g} label={GEN_NAMES[g] ?? `Gen ${g}`} active={gen === g} onClick={() => setGen(g)} />
-						))}
-					</div>
-				)}
 			</div>
 
 			{/* Stats */}
-			<div style={{ fontSize: "13px", color: "var(--color-text-tertiary)" }}>
-				{owned} tengo · {missing} falta · {skipped > 0 ? `${skipped} no busco · ` : ""}{total} total
+			<div style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
+				{owned} tengo · {missing} falta{skipped > 0 ? ` · ${skipped} no busco` : ""} · {total} total
 			</div>
 
 			{/* Grid */}
@@ -226,7 +244,6 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 					No hay ítems que coincidan con el filtro.
 				</div>
 			)}
-
 		</div>
 	);
 }
