@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -38,9 +37,9 @@ model CatalogItem {
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
 
-  variantOf     CatalogItem?  @relation("Variants", fields: [variantOfId], references: [id])
-  variants      CatalogItem[] @relation("Variants")
-  collection    Collection[]
+  variantOf  CatalogItem?  @relation("Variants", fields: [variantOfId], references: [id])
+  variants   CatalogItem[] @relation("Variants")
+  collection Collection[]
 
   @@index([category])
   @@index([variantOfId])
@@ -56,8 +55,8 @@ model Collection {
   isFullArt Boolean     @default(false) @map("is_full_art")
   updatedAt DateTime    @updatedAt @map("updated_at")
 
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  item      CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
   @@index([userId])
