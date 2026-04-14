@@ -11,9 +11,9 @@ export async function getProgress(userId: string): Promise<CategoryProgress[]> {
 	const rows = await prisma.$queryRaw<CategoryProgress[]>`
 		SELECT
 			ci.category,
-			COUNT(*)::int                                              AS total,
-			COUNT(*) FILTER (WHERE c.owned = true)::int               AS owned,
-			COUNT(*) FILTER (WHERE c.is_full_art = true)::int         AS "fullArt"
+			COUNT(*)::int                                                        AS total,
+			COUNT(*) FILTER (WHERE c.owned = true)::int                          AS owned,
+			COUNT(*) FILTER (WHERE c.is_full_art = true)::int                    AS "fullArt"
 		FROM catalog_items ci
 		LEFT JOIN collection c
 			ON c.item_id = ci.id AND c.user_id = ${userId}
@@ -36,6 +36,7 @@ export interface CollectionItem {
 	sortOrder:   number;
 	owned:       boolean;
 	isFullArt:   boolean;
+	skipped:     boolean;
 }
 
 export async function getItemsByCategory(
@@ -54,8 +55,9 @@ export async function getItemsByCategory(
 			ci.region,
 			ci.generation,
 			ci.sort_order     AS "sortOrder",
-			COALESCE(c.owned, false)        AS owned,
-			COALESCE(c.is_full_art, false)  AS "isFullArt"
+			COALESCE(c.owned,      false) AS owned,
+			COALESCE(c.is_full_art,false) AS "isFullArt",
+			COALESCE(c.skipped,    false) AS skipped
 		FROM catalog_items ci
 		LEFT JOIN collection c
 			ON c.item_id = ci.id AND c.user_id = ${userId}
@@ -73,8 +75,21 @@ export async function toggleOwned(
 ): Promise<void> {
 	await prisma.collection.upsert({
 		where:  { userId_itemId: { userId, itemId } },
-		update: { owned, isFullArt },
-		create: { userId, itemId, owned, isFullArt },
+		// When marking as owned, always clear skipped
+		update: { owned, isFullArt, skipped: owned ? false : undefined },
+		create: { userId, itemId, owned, isFullArt, skipped: false },
+	});
+}
+
+export async function toggleSkipped(
+	userId:  string,
+	itemId:  number,
+	skipped: boolean,
+): Promise<void> {
+	await prisma.collection.upsert({
+		where:  { userId_itemId: { userId, itemId } },
+		update: { skipped },
+		create: { userId, itemId, owned: false, isFullArt: false, skipped },
 	});
 }
 
@@ -87,11 +102,11 @@ export async function getPokemonGrouped(
 ): Promise<CollectionItemWithVariants[]> {
 	const all = await getItemsByCategory(userId, "pokemon");
 
-	const bases    = all.filter((i) => i.variantOfId === null);
-	const variants = all.filter((i) => i.variantOfId !== null);
+	const bases    = all.filter(i => i.variantOfId === null);
+	const variants = all.filter(i => i.variantOfId !== null);
 
-	return bases.map((base) => ({
+	return bases.map(base => ({
 		...base,
-		variants: variants.filter((v) => v.variantOfId === base.id),
+		variants: variants.filter(v => v.variantOfId === base.id),
 	}));
 }

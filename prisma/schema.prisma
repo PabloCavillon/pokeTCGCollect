@@ -53,6 +53,7 @@ model Collection {
   itemId    Int         @map("item_id")
   owned     Boolean     @default(false)
   isFullArt Boolean     @default(false) @map("is_full_art")
+  skipped   Boolean     @default(false)
   updatedAt DateTime    @updatedAt @map("updated_at")
 
   user User        @relation(fields: [userId], references: [id], onDelete: Cascade)

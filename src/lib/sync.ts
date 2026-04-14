@@ -68,7 +68,8 @@ async function syncSpecies(
 	let inserted = 0;
 	let skipped  = 0;
 
-	// Variantes
+	// Variants = everything that is NOT the true base form
+	// This correctly includes: regional forms, day/night forms, mega, gmax, cosmetics, etc.
 	const variants = forms.filter((f) => !f.isDefault);
 
 	for (const [index, form] of variants.entries()) {
