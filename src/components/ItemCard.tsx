@@ -2,6 +2,7 @@
 
 import { CollectionItem } from "@/lib/queries";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ItemCardProps {
 	item:     CollectionItem;
@@ -10,6 +11,7 @@ interface ItemCardProps {
 }
 
 export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
+	const router = useRouter();
 	const [owned,    setOwned]    = useState(item.owned);
 	const [isFullArt,setIsFullArt]= useState(item.isFullArt);
 	const [skipped,  setSkipped]  = useState(item.skipped);
@@ -19,27 +21,10 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 		? Math.floor(item.sortOrder / 100)
 		: null;
 
-	// Show region only for variants from a different region (regional forms)
 	const showRegion = !!item.region && item.variantOfId !== null;
 
-	const handleToggleOwned = async () => {
-		if (loading) return;
-		setLoading(true);
-		const newOwned   = !owned;
-		const newFullArt = newOwned ? isFullArt : false;
-		const wasSkipped = skipped;
-		setOwned(newOwned);
-		setIsFullArt(newFullArt);
-		if (newOwned && skipped) setSkipped(false);
-		try {
-			await onToggle(item.id, newOwned, newFullArt);
-		} catch {
-			setOwned(owned);
-			setIsFullArt(isFullArt);
-			setSkipped(wasSkipped);
-		} finally {
-			setLoading(false);
-		}
+	const handleCardClick = () => {
+		router.push(`/collection/item/${item.id}`);
 	};
 
 	const handleToggleFullArt = async (e: React.MouseEvent) => {
@@ -80,7 +65,7 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 
 	return (
 		<div
-			onClick={handleToggleOwned}
+			onClick={handleCardClick}
 			style={{
 				display:        "flex",
 				flexDirection:  "column",

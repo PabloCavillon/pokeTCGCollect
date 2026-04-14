@@ -97,6 +97,34 @@ export interface CollectionItemWithVariants extends CollectionItem {
 	variants: CollectionItem[];
 }
 
+export async function getItemById(
+	userId: string,
+	itemId: number,
+): Promise<CollectionItem | null> {
+	const rows = await prisma.$queryRaw<CollectionItem[]>`
+		SELECT
+			ci.id,
+			ci.slug,
+			ci.name,
+			ci.category,
+			ci.variant_of_id  AS "variantOfId",
+			ci.variant_type   AS "variantType",
+			ci.sprite_url     AS "spriteUrl",
+			ci.region,
+			ci.generation,
+			ci.sort_order     AS "sortOrder",
+			COALESCE(c.owned,      false) AS owned,
+			COALESCE(c.is_full_art,false) AS "isFullArt",
+			COALESCE(c.skipped,    false) AS skipped
+		FROM catalog_items ci
+		LEFT JOIN collection c
+			ON c.item_id = ci.id AND c.user_id = ${userId}
+		WHERE ci.id = ${itemId}
+		LIMIT 1
+	`;
+	return rows[0] ?? null;
+}
+
 export async function getPokemonGrouped(
 	userId: string,
 ): Promise<CollectionItemWithVariants[]> {
