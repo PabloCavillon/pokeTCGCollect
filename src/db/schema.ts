@@ -9,10 +9,8 @@ import {
 	unique,
 	index,
 	check,
-	primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql, relations } from "drizzle-orm";
-import type { AdapterAccount } from "next-auth/adapters";
 
 export const catalogItems = pgTable(
 	"catalog_items",
@@ -62,13 +60,13 @@ export const catalogItemsRelations = relations(catalogItems, ({ one, many }) => 
 }));
 
 export const users = pgTable("users", {
-	id:            uuid("id").primaryKey().defaultRandom(),
-	name:          text("name"),
-	email:         text("email").notNull().unique(),
-	emailVerified: timestamp("emailVerified", { withTimezone: true }),
-	image:         text("image"),
-	displayName:   text("display_name"),
-	createdAt:     timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	id:           uuid("id").primaryKey().defaultRandom(),
+	name:         text("name"),
+	email:        text("email").notNull().unique(),
+	passwordHash: text("password_hash"),
+	image:        text("image"),
+	displayName:  text("display_name"),
+	createdAt:    timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -102,44 +100,6 @@ export const collectionRelations = relations(collection, ({ one }) => ({
 		references: [catalogItems.id],
 	}),
 }));
-
-export const accounts = pgTable(
-	"accounts",
-	{
-		userId:            uuid("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-		type:              text("type").$type<AdapterAccount["type"]>().notNull(),
-		provider:          text("provider").notNull(),
-		providerAccountId: text("providerAccountId").notNull(),
-		refresh_token:     text("refresh_token"),
-		access_token:      text("access_token"),
-		expires_at:        integer("expires_at"),
-		token_type:        text("token_type"),
-		scope:             text("scope"),
-		id_token:          text("id_token"),
-		session_state:     text("session_state"),
-	},
-	(t) => [
-		primaryKey({ columns: [t.provider, t.providerAccountId] }),
-	],
-);
-
-export const sessions = pgTable("sessions", {
-	sessionToken: text("sessionToken").primaryKey(),
-	userId:       uuid("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-	expires:      timestamp("expires", { withTimezone: true }).notNull(),
-});
-
-export const verificationTokens = pgTable(
-	"verification_tokens",
-	{
-		identifier: text("identifier").notNull(),
-		token:      text("token").notNull(),
-		expires:    timestamp("expires", { withTimezone: true }).notNull(),
-	},
-	(t) => [
-		primaryKey({ columns: [t.identifier, t.token] }),
-	],
-);
 
 export type CatalogItem    = typeof catalogItems.$inferSelect;
 export type NewCatalogItem = typeof catalogItems.$inferInsert;

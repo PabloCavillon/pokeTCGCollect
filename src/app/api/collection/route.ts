@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import {
 	getItemsByCategory,
 	getPokemonGrouped,
@@ -7,19 +7,13 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-	const session = await auth();
-
-	if (!session?.user?.id) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
+	const session = await getSession();
+	if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 	const category = req.nextUrl.searchParams.get("category");
 
 	if (!category) {
-		return NextResponse.json(
-			{ error: "'Falta el parámetro category" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ error: "Falta el parámetro category" }, { status: 400 });
 	}
 
 	const validCategories = ["pokemon", "trainer", "pokeball", "energy"];
@@ -32,11 +26,10 @@ export async function GET(req: NextRequest) {
 
 	try {
 		if (category === "pokemon") {
-			const items = await getPokemonGrouped(session.user.id);
+			const items = await getPokemonGrouped(session.id);
 			return NextResponse.json({ items });
 		}
-
-		const items = await getItemsByCategory(session.user.id, category);
+		const items = await getItemsByCategory(session.id, category);
 		return NextResponse.json({ items });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
@@ -45,19 +38,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-	const session = await auth();
-
-	if (!session?.user?.id) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
+	const session = await getSession();
+	if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 	let body: unknown;
-
-	try {
-		body = await req.json();
-	} catch {
-		return NextResponse.json({ error: "Body inválido" }, { status: 400 });
-	}
+	try { body = await req.json(); }
+	catch { return NextResponse.json({ error: "Body inválido" }, { status: 400 }); }
 
 	if (
 		typeof body !== "object" ||
@@ -66,18 +52,15 @@ export async function PATCH(req: NextRequest) {
 		typeof (body as Record<string, unknown>).owned !== "boolean"
 	) {
 		return NextResponse.json(
-			{ error: "Body debe tener {itemId: number, owned: boolean" },
+			{ error: "Body debe tener {itemId: number, owned: boolean}" },
 			{ status: 400 },
 		);
 	}
-	const {
-		itemId,
-		owned,
-		isFullArt = false,
-	} = body as { itemId: number; owned: boolean; isFullArt?: boolean };
+
+	const { itemId, owned, isFullArt = false } = body as { itemId: number; owned: boolean; isFullArt?: boolean };
 
 	try {
-		await toggleOwned(session.user.id, itemId, owned, isFullArt);
+		await toggleOwned(session.id, itemId, owned, isFullArt);
 		return NextResponse.json({ ok: true });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
