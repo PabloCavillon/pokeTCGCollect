@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx dotenv:*)"
+      "Bash(npx dotenv:*)",
+      "Bash(npm run:*)",
+      "Bash(npx next:*)"
     ]
   }
 }
