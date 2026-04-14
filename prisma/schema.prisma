@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String?
+  email        String       @unique
+  passwordHash String?      @map("password_hash")
+  image        String?
+  displayName  String?      @map("display_name")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  collection   Collection[]
+
+  @@map("users")
+}
+
+model CatalogItem {
+  id            Int          @id @default(autoincrement())
+  slug          String       @unique
+  category      String
+  name          String
+  variantOfId   Int?         @map("variant_of_id")
+  variantType   String?      @map("variant_type")
+  source        String       @default("manual")
+  pokeapiFormId Int?         @map("pokeapi_form_id")
+  spriteUrl     String?      @map("sprite_url")
+  region        String?
+  generation    Int?
+  sortOrder     Int          @default(0) @map("sort_order")
+  notes         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  variantOf     CatalogItem?  @relation("Variants", fields: [variantOfId], references: [id])
+  variants      CatalogItem[] @relation("Variants")
+  collection    Collection[]
+
+  @@index([category])
+  @@index([variantOfId])
+  @@index([category, sortOrder])
+  @@map("catalog_items")
+}
+
+model Collection {
+  id        Int         @id @default(autoincrement())
+  userId    String      @map("user_id")
+  itemId    Int         @map("item_id")
+  owned     Boolean     @default(false)
+  isFullArt Boolean     @default(false) @map("is_full_art")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      CatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@index([userId, owned])
+  @@map("collection")
+}

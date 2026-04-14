@@ -1,6 +1,5 @@
-import { db, users } from "@/db";
+import { prisma } from "@/db";
 import { createSession, hashPassword } from "@/lib/auth";
-import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -19,18 +18,16 @@ export async function POST(req: NextRequest) {
 	}
 
 	const normalizedEmail = email.toLowerCase().trim();
-	const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, normalizedEmail)).limit(1);
 
+	const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 	if (existing) {
 		return NextResponse.json({ error: "Ya existe una cuenta con ese email" }, { status: 409 });
 	}
 
 	const passwordHash = await hashPassword(password);
-	const [user] = await db.insert(users).values({
-		name:         name.trim(),
-		email:        normalizedEmail,
-		passwordHash,
-	}).returning({ id: users.id, email: users.email, name: users.name });
+	const user = await prisma.user.create({
+		data: { name: name.trim(), email: normalizedEmail, passwordHash },
+	});
 
 	await createSession({ id: user.id, email: user.email, name: user.name });
 	return NextResponse.json({ ok: true }, { status: 201 });

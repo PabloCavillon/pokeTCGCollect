@@ -1,156 +1,107 @@
-// src/lib/sync.ts
-// Toma los datos de pokeapi.ts y los inserta en catalog_items.
-// Es idempotente: podés correrlo N veces sin duplicar datos.
-
-import { sql, eq } from "drizzle-orm";
+import { prisma } from "@/db";
 import {
 	getAllSpecies,
 	getAllFormsForSpecies,
 	type NormalizedForm,
 	type VariantTypeFromApi,
 } from "./pokeapi";
-import { catalogItems, db } from "@/db";
-
-// ============================================================
-// TIPOS
-// ============================================================
 
 export interface SyncResult {
 	species: number;
-	forms: number;
+	forms:   number;
 	skipped: number;
-	errors: string[];
+	errors:  string[];
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
-
-// Convierte el VariantTypeFromApi al valor que acepta tu schema
 function toSchemaVariantType(
 	vt: VariantTypeFromApi | null,
 ): "mega" | "gmax" | "regional" | "character" | "villain" | "shiny" | null {
 	if (!vt) return null;
-	// "battle" y "cosmetic" no tienen valor propio en el schema todavía,
-	// los guardamos como null para clasificar manualmente después.
 	if (vt === "battle" || vt === "cosmetic") return null;
-	return vt; // mega | gmax | regional pasan directo
+	return vt;
 }
 
 const GENERATION_REGION: Record<number, string> = {
-	1: "Kanto",
-	2: "Johto",
-	3: "Hoenn",
-	4: "Sinnoh",
-	5: "Unova",
-	6: "Kalos",
-	7: "Alola",
-	8: "Galar",
-	9: "Paldea",
+	1: "Kanto", 2: "Johto",  3: "Hoenn",
+	4: "Sinnoh", 5: "Unova", 6: "Kalos",
+	7: "Alola",  8: "Galar", 9: "Paldea",
 };
 
 function inferRegion(formName: string): string | null {
-	if (formName.includes("alola")) return "Alola";
-	if (formName.includes("galar")) return "Galar";
-	if (formName.includes("hisui")) return "Hisui";
+	if (formName.includes("alola"))  return "Alola";
+	if (formName.includes("galar"))  return "Galar";
+	if (formName.includes("hisui"))  return "Hisui";
 	if (formName.includes("paldea")) return "Paldea";
 	return null;
 }
 
-// ============================================================
-// SYNC DE UNA ESPECIE
-// ============================================================
-
 async function syncSpecies(
-	speciesName: string,
+	speciesName:     string,
 	speciesPokeapiId: number,
-	generation: number,
-	forms: NormalizedForm[],
+	generation:      number,
+	forms:           NormalizedForm[],
 ): Promise<{ inserted: number; skipped: number }> {
 	const defaultForm = forms.find((f) => f.isDefault) ?? forms[0];
 	if (!defaultForm) return { inserted: 0, skipped: 0 };
 
-	// Insertar forma base
-	const baseResult = await db
-		.insert(catalogItems)
-		.values({
-			slug: speciesName,
-			category: "pokemon",
-			name: defaultForm.displayName.split(" ")[0],
-			variantOfId: null,
-			variantType: null,
-			source: "pokeapi",
+	// Forma base — createIfNotExists con skipDuplicates
+	const created = await prisma.catalogItem.upsert({
+		where:  { slug: speciesName },
+		update: {},   // si ya existe, no tocar nada
+		create: {
+			slug:          speciesName,
+			category:      "pokemon",
+			name:          defaultForm.displayName.split(" ")[0],
+			variantOfId:   null,
+			variantType:   null,
+			source:        "pokeapi",
 			pokeapiFormId: defaultForm.pokeapiFormId,
-			spriteUrl: defaultForm.spriteUrl,
+			spriteUrl:     defaultForm.spriteUrl,
 			generation,
-			region: GENERATION_REGION[generation] ?? null,
-			sortOrder: speciesPokeapiId * 100,
-			notes: null,
-		})
-		.onConflictDoNothing()
-		.returning({ id: catalogItems.id });
+			region:        GENERATION_REGION[generation] ?? null,
+			sortOrder:     speciesPokeapiId * 100,
+			notes:         null,
+		},
+	});
 
-	// Si ya existía, buscar su id
-	let baseId: number;
+	const baseId = created.id;
+	let inserted = 0;
+	let skipped  = 0;
 
-	if (baseResult.length > 0) {
-		baseId = baseResult[0].id;
-	} else {
-		const existing = await db.query.catalogItems.findFirst({
-			where: eq(catalogItems.slug, speciesName),
-			columns: { id: true },
-		});
-		if (!existing) return { inserted: 0, skipped: 1 };
-		baseId = existing.id;
-	}
-
-	let inserted = baseResult.length > 0 ? 1 : 0;
-	let skipped = baseResult.length === 0 ? 1 : 0;
-
-	// Insertar variantes
+	// Variantes
 	const variants = forms.filter((f) => !f.isDefault);
 
 	for (const [index, form] of variants.entries()) {
-		const result = await db
-			.insert(catalogItems)
-			.values({
-				slug: form.name,
-				category: "pokemon",
-				name: form.displayName,
-				variantOfId: baseId,
-				variantType: toSchemaVariantType(form.variantType),
-				source: "pokeapi",
-				pokeapiFormId: form.pokeapiFormId,
-				spriteUrl: form.spriteUrl,
-				generation: form.generation,
-				region: inferRegion(form.formName),
-				sortOrder: speciesPokeapiId * 100 + index + 1,
-				notes: null,
-			})
-			.onConflictDoNothing()
-			.returning({ id: catalogItems.id });
+		const existing = await prisma.catalogItem.findUnique({ where: { slug: form.name }, select: { id: true } });
 
-		if (result.length > 0) {
-			inserted++;
-		} else {
+		if (existing) {
 			skipped++;
+		} else {
+			await prisma.catalogItem.create({
+				data: {
+					slug:          form.name,
+					category:      "pokemon",
+					name:          form.displayName,
+					variantOfId:   baseId,
+					variantType:   toSchemaVariantType(form.variantType),
+					source:        "pokeapi",
+					pokeapiFormId: form.pokeapiFormId,
+					spriteUrl:     form.spriteUrl,
+					generation:    form.generation,
+					region:        inferRegion(form.formName),
+					sortOrder:     speciesPokeapiId * 100 + index + 1,
+					notes:         null,
+				},
+			});
+			inserted++;
 		}
 	}
 
 	return { inserted, skipped };
 }
 
-// ============================================================
-// SYNC PRINCIPAL
-// ============================================================
-
 export async function syncAllPokemon(): Promise<SyncResult> {
-	const result: SyncResult = {
-		species: 0,
-		forms: 0,
-		skipped: 0,
-		errors: [],
-	};
+	const result: SyncResult = { species: 0, forms: 0, skipped: 0, errors: [] };
 
 	console.log("→ Fetching species list from PokéAPI...");
 	const allSpecies = await getAllSpecies();
@@ -159,22 +110,17 @@ export async function syncAllPokemon(): Promise<SyncResult> {
 	for (const species of allSpecies) {
 		try {
 			const forms = await getAllFormsForSpecies(species);
-
 			const { inserted, skipped } = await syncSpecies(
-				species.name,
-				species.pokeapiId,
-				species.generation,
-				forms,
+				species.name, species.pokeapiId, species.generation, forms,
 			);
-
 			result.species++;
-			result.forms += inserted;
+			result.forms   += inserted;
 			result.skipped += skipped;
 
 			if (result.species % 50 === 0) {
 				console.log(
 					`  ${result.species}/${allSpecies.length} species — ` +
-						`${result.forms} inserted, ${result.skipped} skipped`,
+					`${result.forms} inserted, ${result.skipped} skipped`,
 				);
 			}
 		} catch (err) {
@@ -184,35 +130,28 @@ export async function syncAllPokemon(): Promise<SyncResult> {
 		}
 	}
 
-	// Linkear variantes manuales del seed a su especie base
 	await linkManualVariants();
-
 	console.log("→ Sync complete:", result);
 	return result;
 }
 
-// ============================================================
-// LINKEAR VARIANTES MANUALES
-// ============================================================
-
 async function linkManualVariants() {
-	const manualVariants: Array<{ slug: string; baseSlug: string }> = [
-		{ slug: "pikachu-ash", baseSlug: "pikachu" },
-		{ slug: "meowth-rocket", baseSlug: "meowth" },
-		{ slug: "mewtwo-armored", baseSlug: "mewtwo" },
+	const manualVariants = [
+		{ slug: "pikachu-ash",    baseSlug: "pikachu" },
+		{ slug: "meowth-rocket",  baseSlug: "meowth"  },
+		{ slug: "mewtwo-armored", baseSlug: "mewtwo"  },
 	];
 
 	for (const { slug, baseSlug } of manualVariants) {
-		const base = await db.query.catalogItems.findFirst({
-			where: eq(catalogItems.slug, baseSlug),
-			columns: { id: true },
+		const base = await prisma.catalogItem.findUnique({
+			where:  { slug: baseSlug },
+			select: { id: true },
 		});
-
 		if (!base) continue;
 
-		await db
-			.update(catalogItems)
-			.set({ variantOfId: base.id })
-			.where(sql`slug = ${slug} AND variant_of_id IS NULL`);
+		await prisma.catalogItem.updateMany({
+			where: { slug, variantOfId: null },
+			data:  { variantOfId: base.id },
+		});
 	}
 }
