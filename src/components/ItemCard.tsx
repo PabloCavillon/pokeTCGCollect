@@ -74,12 +74,12 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 				flexDirection:  "column",
 				alignItems:     "center",
 				gap:            "6px",
-				padding:        "10px 8px",
-				borderRadius:   "12px",
+				padding:        "12px 10px",
+				borderRadius:   "14px",
 				border:         `1.5px solid ${borderColor}`,
 				background:     owned && !skipped ? "var(--color-background-secondary)" : "var(--color-background-primary)",
 				cursor:         loading ? "wait" : "pointer",
-				opacity:        loading ? 0.6 : skipped ? 0.4 : 1,
+				opacity:        loading ? 0.6 : skipped ? 0.55 : 1,
 				transition:     "border-color 0.2s ease, opacity 0.2s ease",
 				userSelect:     "none",
 				position:       "relative",
@@ -110,27 +110,27 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 				<img
 					src={item.spriteUrl}
 					alt={item.name}
-					width={72}
-					height={72}
+					width={84}
+					height={84}
 					loading="lazy"
 					style={{
 						objectFit:  "contain",
-						opacity:    owned && !skipped ? 1 : 0.3,
+						opacity:    owned && !skipped ? 1 : 0.5,
 						transition: "opacity 0.2s ease",
 						marginTop:  dexNumber !== null ? "8px" : "0",
 					}}
 				/>
 			) : (
 				<div style={{
-					width:          "72px",
-					height:         "72px",
-					borderRadius:   "8px",
+					width:          "84px",
+					height:         "84px",
+					borderRadius:   "10px",
 					background:     "var(--color-background-tertiary)",
 					display:        "flex",
 					alignItems:     "center",
 					justifyContent: "center",
-					fontSize:       "26px",
-					opacity:        owned && !skipped ? 1 : 0.3,
+					fontSize:       "30px",
+					opacity:        owned && !skipped ? 1 : 0.5,
 					marginTop:      dexNumber !== null ? "8px" : "0",
 				}}>
 					{item.category === "trainer"  ? "🧢" :

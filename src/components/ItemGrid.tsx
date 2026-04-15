@@ -58,7 +58,7 @@ const selectStyle: React.CSSProperties = {
 
 const GRID: React.CSSProperties = {
 	display:             "grid",
-	gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+	gridTemplateColumns: "repeat(auto-fill, minmax(108px, 1fr))",
 	gap:                 "8px",
 };
 
