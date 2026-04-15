@@ -18,7 +18,13 @@ export default async function ItemDetailPage({
 	const item = await getItemById(session.id, itemId);
 	if (!item) notFound();
 
-	const backHref = `/collection/${item.category === "pokeball" ? "pokeballs" : item.category}`;
+	const categoryPath: Record<string, string> = {
+		pokemon:  "pokemon",
+		trainer:  "trainers",
+		pokeball: "pokeballs",
+		energy:   "energy",
+	};
+	const backHref = `/collection/${categoryPath[item.category] ?? item.category}`;
 	const { prevId, nextId } = await getAdjacentItemIds(item.category, item.sortOrder);
 
 	return (
