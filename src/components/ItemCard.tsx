@@ -115,7 +115,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 					loading="lazy"
 					style={{
 						objectFit:  "contain",
-						opacity:    owned && !skipped ? 1 : 0.5,
+						opacity:    owned && !skipped ? 1 : 0.65,
 						transition: "opacity 0.2s ease",
 						marginTop:  dexNumber !== null ? "8px" : "0",
 					}}
@@ -130,7 +130,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 					alignItems:     "center",
 					justifyContent: "center",
 					fontSize:       "30px",
-					opacity:        owned && !skipped ? 1 : 0.5,
+					opacity:        owned && !skipped ? 1 : 0.65,
 					marginTop:      dexNumber !== null ? "8px" : "0",
 				}}>
 					{item.category === "trainer"  ? "🧢" :
@@ -144,7 +144,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 				fontSize:   "11px",
 				fontWeight: 500,
 				textAlign:  "center",
-				color:      owned && !skipped ? "var(--color-text-primary)" : "var(--color-text-tertiary)",
+				color:      owned && !skipped ? "var(--color-text-primary)" : "var(--color-text-secondary)",
 				lineHeight: 1.3,
 			}}>
 				{item.name}
