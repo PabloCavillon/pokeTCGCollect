@@ -7,10 +7,9 @@ import { useRouter } from "next/navigation";
 interface ItemCardProps {
 	item:     CollectionItem;
 	onToggle: (itemId: number, owned: boolean, isFullArt: boolean) => Promise<void>;
-	onSkip:   (itemId: number, skipped: boolean) => Promise<void>;
 }
 
-export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
+export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 	const router = useRouter();
 	const [owned,    setOwned]    = useState(item.owned);
 	const [isFullArt,setIsFullArt]= useState(item.isFullArt);
@@ -27,6 +26,25 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 		router.push(`/collection/item/${item.id}`);
 	};
 
+	const handleToggleOwned = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (loading) return;
+		setLoading(true);
+		const newOwned   = !owned;
+		const newFullArt = newOwned ? isFullArt : false;
+		setOwned(newOwned);
+		setIsFullArt(newFullArt);
+		if (newOwned && skipped) setSkipped(false);
+		try {
+			await onToggle(item.id, newOwned, newFullArt);
+		} catch {
+			setOwned(owned);
+			setIsFullArt(isFullArt);
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	const handleToggleFullArt = async (e: React.MouseEvent) => {
 		e.stopPropagation();
 		if (!owned || loading) return;
@@ -37,21 +55,6 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 			await onToggle(item.id, owned, newFullArt);
 		} catch {
 			setIsFullArt(isFullArt);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleToggleSkip = async (e: React.MouseEvent) => {
-		e.stopPropagation();
-		if (loading) return;
-		setLoading(true);
-		const newSkipped = !skipped;
-		setSkipped(newSkipped);
-		try {
-			await onSkip(item.id, newSkipped);
-		} catch {
-			setSkipped(skipped);
 		} finally {
 			setLoading(false);
 		}
@@ -163,6 +166,24 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 
 			{/* Bottom buttons */}
 			<div style={{ display: "flex", gap: "4px", alignItems: "center" }} onClick={e => e.stopPropagation()}>
+				<button
+					onClick={handleToggleOwned}
+					title={owned ? "Quitar de la colección" : "Marcar como obtenido"}
+					style={{
+						fontSize:     "10px",
+						padding:      "2px 7px",
+						borderRadius: "999px",
+						border:       `1px solid ${owned && !skipped ? "#3B82F6" : "var(--color-border-tertiary)"}`,
+						background:   owned && !skipped ? "rgba(59,130,246,0.15)" : "transparent",
+						color:        owned && !skipped ? "#3B82F6" : "var(--color-text-tertiary)",
+						cursor:       "pointer",
+						transition:   "all 0.2s ease",
+						lineHeight:   1.4,
+					}}
+				>
+					{owned && !skipped ? "✓ Obtenido" : "Obtenido"}
+				</button>
+
 				{owned && !skipped && (
 					<button
 						onClick={handleToggleFullArt}
@@ -180,23 +201,6 @@ export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 						{isFullArt ? "⭐ FA" : "FA?"}
 					</button>
 				)}
-
-				<button
-					onClick={handleToggleSkip}
-					title={skipped ? "Volver a buscar" : "No buscar"}
-					style={{
-						fontSize:     "11px",
-						padding:      "2px 5px",
-						borderRadius: "999px",
-						border:       `1px solid ${skipped ? "rgba(239,68,68,0.4)" : "var(--color-border-tertiary)"}`,
-						background:   skipped ? "rgba(239,68,68,0.1)" : "transparent",
-						color:        skipped ? "#EF4444" : "var(--color-text-tertiary)",
-						cursor:       "pointer",
-						lineHeight:   1,
-					}}
-				>
-					{skipped ? "↩" : "✕"}
-				</button>
 			</div>
 		</div>
 	);

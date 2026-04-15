@@ -1,5 +1,5 @@
 import { getSession } from "@/lib/auth";
-import { getItemById } from "@/lib/queries";
+import { getItemById, getAdjacentItemIds } from "@/lib/queries";
 import { redirect, notFound } from "next/navigation";
 import ItemDetail from "@/components/ItemDetail";
 
@@ -18,8 +18,8 @@ export default async function ItemDetailPage({
 	const item = await getItemById(session.id, itemId);
 	if (!item) notFound();
 
-	// Determine where the back button should go
 	const backHref = `/collection/${item.category === "pokeball" ? "pokeballs" : item.category}`;
+	const { prevId, nextId } = await getAdjacentItemIds(item.category, item.sortOrder);
 
 	return (
 		<main style={{
@@ -30,24 +30,7 @@ export default async function ItemDetailPage({
 			padding:       "24px 16px 48px",
 			gap:           "0",
 		}}>
-			{/* Back */}
-			<div style={{ width: "100%", maxWidth: "480px", marginBottom: "16px" }}>
-				<a
-					href={backHref}
-					style={{
-						display:    "inline-flex",
-						alignItems: "center",
-						gap:        "6px",
-						fontSize:   "14px",
-						color:      "var(--color-text-secondary)",
-						textDecoration: "none",
-					}}
-				>
-					← Volver
-				</a>
-			</div>
-
-			<ItemDetail item={item} />
+			<ItemDetail item={item} backHref={backHref} prevId={prevId} nextId={nextId} />
 		</main>
 	);
 }

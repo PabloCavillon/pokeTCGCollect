@@ -3,7 +3,11 @@
     "allow": [
       "Bash(npx dotenv:*)",
       "Bash(npm run:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(dotenv -e .env.local -- npx tsx scripts/check_items.ts)",
+      "Bash(npx dotenv-cli *)",
+      "Bash(python3 -c \"import sys,json; items=json.load\\(sys.stdin\\); [print\\(i['name']\\) for i in items if i['category']=='trainer']\")",
+      "Bash(node -e ' *)"
     ]
   }
 }

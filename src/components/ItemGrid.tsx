@@ -9,7 +9,6 @@ type FilterType = 'all' | 'owned' | 'missing' | 'fullart' | 'nofullart' | 'skipp
 interface ItemGridProps {
 	items:       CollectionItem[] | CollectionItemWithVariants[];
 	onToggle:    (itemId: number, owned: boolean, isFullArt: boolean) => Promise<void>;
-	onSkip:      (itemId: number, skipped: boolean) => Promise<void>;
 	showGroups?: boolean;
 }
 
@@ -63,7 +62,7 @@ const GRID: React.CSSProperties = {
 	gap:                 "8px",
 };
 
-export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }: ItemGridProps) {
+export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGridProps) {
 	const [filter, setFilter] = useState<FilterType>("all");
 	const [search, setSearch] = useState("");
 	const [region, setRegion] = useState("all");
@@ -236,7 +235,7 @@ export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }
 			{flat.length > 0 ? (
 				<div style={GRID}>
 					{flat.map(item => (
-						<ItemCard key={item.id} item={item} onToggle={onToggle} onSkip={onSkip} />
+						<ItemCard key={item.id} item={item} onToggle={onToggle} />
 					))}
 				</div>
 			) : (

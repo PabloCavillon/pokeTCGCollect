@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { getItemsByCategory, getPokemonGrouped, toggleOwned, toggleSkipped } from "@/lib/queries";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -37,6 +38,10 @@ export async function PATCH(req: NextRequest) {
 	if (typeof b.itemId === "number" && typeof b.skipped === "boolean") {
 		try {
 			await toggleSkipped(session.id, b.itemId, b.skipped);
+			revalidatePath("/collection/pokemon");
+			revalidatePath("/collection/trainers");
+			revalidatePath("/collection/pokeballs");
+			revalidatePath("/collection/energy");
 			return NextResponse.json({ ok: true });
 		} catch (err) {
 			return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
@@ -49,6 +54,10 @@ export async function PATCH(req: NextRequest) {
 
 	try {
 		await toggleOwned(session.id, b.itemId, b.owned, (b.isFullArt as boolean | undefined) ?? false);
+		revalidatePath("/collection/pokemon");
+		revalidatePath("/collection/trainers");
+		revalidatePath("/collection/pokeballs");
+		revalidatePath("/collection/energy");
 		return NextResponse.json({ ok: true });
 	} catch (err) {
 		return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

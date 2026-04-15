@@ -125,6 +125,30 @@ export async function getItemById(
 	return rows[0] ?? null;
 }
 
+export async function getAdjacentItemIds(
+	category:  string,
+	sortOrder: number,
+): Promise<{ prevId: number | null; nextId: number | null }> {
+	const [prevRows, nextRows] = await Promise.all([
+		prisma.$queryRaw<{ id: number }[]>`
+			SELECT id FROM catalog_items
+			WHERE category = ${category} AND sort_order < ${sortOrder}
+			ORDER BY sort_order DESC
+			LIMIT 1
+		`,
+		prisma.$queryRaw<{ id: number }[]>`
+			SELECT id FROM catalog_items
+			WHERE category = ${category} AND sort_order > ${sortOrder}
+			ORDER BY sort_order ASC
+			LIMIT 1
+		`,
+	]);
+	return {
+		prevId: prevRows[0]?.id ?? null,
+		nextId: nextRows[0]?.id ?? null,
+	};
+}
+
 export async function getPokemonGrouped(
 	userId: string,
 ): Promise<CollectionItemWithVariants[]> {
