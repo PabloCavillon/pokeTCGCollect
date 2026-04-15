@@ -12,7 +12,7 @@ export default async function TrainersPage() {
 
 	return (
 		<main style={{
-			maxWidth:      "800px",
+			maxWidth:      "1080px",
 			margin:        "0 auto",
 			padding:       "32px 16px",
 			display:       "flex",
