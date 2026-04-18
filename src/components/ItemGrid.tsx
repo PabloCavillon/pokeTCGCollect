@@ -34,7 +34,7 @@ function applyFilter(item: CollectionItem, filter: FilterType): boolean {
 		case "fullart":   return item.isFullArt;
 		case "nofullart": return item.owned && !item.isFullArt;
 		case "skipped":   return item.skipped;
-		default:          return true;
+		default:          return !item.skipped;
 	}
 }
 
@@ -119,7 +119,7 @@ export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGr
 		);
 	}, [items, filter, search, region, gen, showGroups]);
 
-	const total   = allFlat.length;
+	const total   = allFlat.filter(i => !i.skipped).length;
 	const owned   = allFlat.filter(i => i.owned).length;
 	const missing = allFlat.filter(i => !i.owned && !i.skipped).length;
 	const skipped = allFlat.filter(i => i.skipped).length;
