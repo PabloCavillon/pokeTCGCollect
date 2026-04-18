@@ -69,11 +69,12 @@ const Legend = () => {
 }
 
 export default function ProgressBar({ progress }: ProgressBarProps) {
-    const totalItems = progress.reduce((acc, p) => acc + p.total, 0);
-    const totalOwned = progress.reduce((acc, p) => acc + p.owned, 0);
-    const totalFullArt = progress.reduce((acc, p) => acc + p.fullArt, 0);
-    const missing = totalItems - totalOwned;
-    const nonFullArt = totalOwned - totalFullArt;
+    const totalSkipped  = progress.reduce((acc, p) => acc + p.skipped, 0);
+    const totalItems    = progress.reduce((acc, p) => acc + p.total, 0) - totalSkipped;
+    const totalOwned    = progress.reduce((acc, p) => acc + p.owned, 0);
+    const totalFullArt  = progress.reduce((acc, p) => acc + p.fullArt, 0);
+    const missing       = totalItems - totalOwned;
+    const nonFullArt    = totalOwned - totalFullArt;
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -102,8 +103,9 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
             </div>
 
             {progress.map((p) => {
-                const nonFA = p.owned - p.fullArt;
-                const falta = p.total - p.owned;
+                const nonFA      = p.owned - p.fullArt;
+                const activeTotal = p.total - p.skipped;
+                const falta      = activeTotal - p.owned;
 
                 return (
                     <div key={p.category} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -124,7 +126,7 @@ export default function ProgressBar({ progress }: ProgressBarProps) {
                                 <span>{falta} faltan</span>
                             </span>
                         </div>
-                        <Bar owned={p.owned} fullArt={p.fullArt} total={p.total} />
+                        <Bar owned={p.owned} fullArt={p.fullArt} total={activeTotal} />
                     </div>
                 );
             })}

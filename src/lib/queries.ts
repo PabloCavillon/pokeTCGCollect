@@ -5,6 +5,7 @@ export interface CategoryProgress {
 	total:    number;
 	owned:    number;
 	fullArt:  number;
+	skipped:  number;
 }
 
 export async function getProgress(userId: string): Promise<CategoryProgress[]> {
@@ -13,7 +14,8 @@ export async function getProgress(userId: string): Promise<CategoryProgress[]> {
 			ci.category,
 			COUNT(*)::int                                                        AS total,
 			COUNT(*) FILTER (WHERE c.owned = true)::int                          AS owned,
-			COUNT(*) FILTER (WHERE c.is_full_art = true)::int                    AS "fullArt"
+			COUNT(*) FILTER (WHERE c.is_full_art = true)::int                    AS "fullArt",
+			COUNT(*) FILTER (WHERE c.skipped = true)::int                        AS skipped
 		FROM catalog_items ci
 		LEFT JOIN collection c
 			ON c.item_id = ci.id AND c.user_id = ${userId}
