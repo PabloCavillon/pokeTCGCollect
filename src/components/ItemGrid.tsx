@@ -2,13 +2,14 @@
 
 import { CollectionItem, CollectionItemWithVariants } from "@/lib/queries";
 import { ItemCard } from "./ItemCard";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type FilterType = 'all' | 'owned' | 'missing' | 'fullart' | 'nofullart' | 'skipped';
 
 interface ItemGridProps {
 	items:       CollectionItem[] | CollectionItemWithVariants[];
 	onToggle:    (itemId: number, owned: boolean, isFullArt: boolean) => Promise<void>;
+	onSkip:      (itemId: number, skipped: boolean) => Promise<void>;
 	showGroups?: boolean;
 }
 
@@ -62,11 +63,29 @@ const GRID: React.CSSProperties = {
 	gap:                 "8px",
 };
 
-export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGridProps) {
-	const [filter, setFilter] = useState<FilterType>("all");
-	const [search, setSearch] = useState("");
-	const [region, setRegion] = useState("all");
-	const [gen,    setGen]    = useState<number | "all">("all");
+export default function ItemGrid({ items, onToggle, onSkip, showGroups = false }: ItemGridProps) {
+	const [filter,        setFilter]        = useState<FilterType>("all");
+	const [search,        setSearch]        = useState("");
+	const [region,        setRegion]        = useState("all");
+	const [gen,           setGen]           = useState<number | "all">("all");
+	const [showScrollTop, setShowScrollTop] = useState(false);
+
+	// Restore scroll position when returning from a detail page
+	useEffect(() => {
+		const key = `scroll:${window.location.pathname}`;
+		const saved = sessionStorage.getItem(key);
+		if (saved) {
+			sessionStorage.removeItem(key);
+			requestAnimationFrame(() => window.scrollTo(0, parseInt(saved, 10)));
+		}
+	}, []);
+
+	// Track scroll for the scroll-to-top button
+	useEffect(() => {
+		const onScroll = () => setShowScrollTop(window.scrollY > 300);
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
 
 	const allFlat: CollectionItem[] = useMemo(() => showGroups
 		? (items as CollectionItemWithVariants[]).flatMap(b => [b, ...b.variants])
@@ -235,13 +254,42 @@ export default function ItemGrid({ items, onToggle, showGroups = false }: ItemGr
 			{flat.length > 0 ? (
 				<div style={GRID}>
 					{flat.map(item => (
-						<ItemCard key={item.id} item={item} onToggle={onToggle} />
+						<ItemCard key={item.id} item={item} onToggle={onToggle} onSkip={onSkip} />
 					))}
 				</div>
 			) : (
 				<div style={{ textAlign: "center", padding: "48px 0", color: "var(--color-text-tertiary)", fontSize: "14px" }}>
 					No hay ítems que coincidan con el filtro.
 				</div>
+			)}
+
+			{/* Scroll-to-top FAB */}
+			{showScrollTop && (
+				<button
+					onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+					title="Volver arriba"
+					style={{
+						position:     "fixed",
+						bottom:       "24px",
+						right:        "20px",
+						zIndex:       50,
+						width:        "40px",
+						height:       "40px",
+						borderRadius: "999px",
+						border:       "1px solid var(--color-border-tertiary)",
+						background:   "var(--color-background-secondary)",
+						color:        "var(--color-text-secondary)",
+						fontSize:     "18px",
+						cursor:       "pointer",
+						display:      "flex",
+						alignItems:   "center",
+						justifyContent: "center",
+						boxShadow:    "0 2px 8px rgba(0,0,0,0.18)",
+						transition:   "opacity 0.2s ease",
+					}}
+				>
+					↑
+				</button>
 			)}
 		</div>
 	);

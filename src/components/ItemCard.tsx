@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 interface ItemCardProps {
 	item:     CollectionItem;
 	onToggle: (itemId: number, owned: boolean, isFullArt: boolean) => Promise<void>;
+	onSkip:   (itemId: number, skipped: boolean) => Promise<void>;
 }
 
-export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
+export const ItemCard = ({ item, onToggle, onSkip }: ItemCardProps) => {
 	const router = useRouter();
 	const [owned,    setOwned]    = useState(item.owned);
 	const [isFullArt,setIsFullArt]= useState(item.isFullArt);
@@ -23,6 +24,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 	const showRegion = !!item.region && item.variantOfId !== null;
 
 	const handleCardClick = () => {
+		sessionStorage.setItem(`scroll:${window.location.pathname}`, String(window.scrollY));
 		router.push(`/collection/item/${item.id}`);
 	};
 
@@ -55,6 +57,22 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 			await onToggle(item.id, owned, newFullArt);
 		} catch {
 			setIsFullArt(isFullArt);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleToggleSkip = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (loading) return;
+		setLoading(true);
+		const newSkipped = !skipped;
+		setSkipped(newSkipped);
+		if (newSkipped) { setOwned(false); setIsFullArt(false); }
+		try {
+			await onSkip(item.id, newSkipped);
+		} catch {
+			setSkipped(skipped);
 		} finally {
 			setLoading(false);
 		}
@@ -184,7 +202,7 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 					{owned && !skipped ? "✓ Obtenido" : "Obtenido"}
 				</button>
 
-				{owned && !skipped && (
+				{owned && !skipped ? (
 					<button
 						onClick={handleToggleFullArt}
 						style={{
@@ -199,6 +217,23 @@ export const ItemCard = ({ item, onToggle }: ItemCardProps) => {
 						}}
 					>
 						{isFullArt ? "⭐ FA" : "FA?"}
+					</button>
+				) : (
+					<button
+						onClick={handleToggleSkip}
+						title={skipped ? "Dejar de ignorar" : "No busco este"}
+						style={{
+							fontSize:     "10px",
+							padding:      "2px 6px",
+							borderRadius: "999px",
+							border:       `1px solid ${skipped ? "var(--color-text-tertiary)" : "var(--color-border-tertiary)"}`,
+							background:   skipped ? "rgba(161,161,170,0.15)" : "transparent",
+							color:        skipped ? "var(--color-text-tertiary)" : "var(--color-border-tertiary)",
+							cursor:       "pointer",
+							transition:   "all 0.2s ease",
+						}}
+					>
+						🚫
 					</button>
 				)}
 			</div>
